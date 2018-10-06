@@ -1,0 +1,57 @@
+---
+title: "Explorator Data Analysis Project"
+author: "Andrew Witherspoon"
+date: "10/6/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Load the two files, which are already R objects, downloaded to our working directory's subfolder, "data":
+```{r}
+NEI <- readRDS("./data/summarySCC_PM25.rds")
+SCC <- readRDS("./data/Source_Classification_Code.rds")
+```
+
+First we will explore if the total emissions from PM2.5 have decreased in the United States from 1999 - 2008.
+
+First we will look at the number of observations taken each year
+```{r}
+ table(as.factor(NEI$year))
+```
+The number of observations has increased each year, so the total measured PM2.5 may be inflated in later years, but we will answer the questions as asked.
+
+```{r}
+totallevels <- with(NEI, tapply(Emissions, as.factor(year), sum))
+par(mar = c(3,5,1,1))
+plot(names(totallevels), totallevels, 
+     type = "h", lwd = 100, lend = 1, xaxt = 'n', yaxt = 'n',
+     ylab = "PM.25 Levels in the U.S.\n(nationwide, in tons)", xlab = "", 
+     pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
+axis(side = 1, at = names(meanlevels))
+axis(side = 2, at = c(4000000, 5000000, 6000000, 7000000), 
+     labels = (c("4 mil.", "5 mil.", "6 mil.", "7 mil.")))
+```
+Yes, there has been a decrease in total emissions
+
+
+Have total emissions from PM2.5decreased in Baltimore City Maryland (fips 24510) from 1999 to 2008?
+
+```{r}
+NEIbal <- NEI[NEI$fips == "24510",]
+Ballevels <- with(NEIbal, tapply(Emissions, as.factor(year), sum))
+par(mar = c(3,5,1,1))
+plot(names(Ballevels), Ballevels, 
+     type = "h", lwd = 100, lend = 1, xaxt = 'n',
+     ylab = "PM.25 Levels, in tons\nBaltimore City, Maryland", xlab = "", 
+     pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
+axis(side = 1, at = names(meanlevels))
+```
+
+
+
+
+
+
