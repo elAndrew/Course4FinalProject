@@ -1,5 +1,5 @@
 ---
-title: "Explorator Data Analysis Project"
+title: "Exploratory Data Analysis Project"
 author: "Andrew Witherspoon"
 date: "10/6/2018"
 output: html_document
@@ -25,33 +25,146 @@ The number of observations has increased each year, so the total measured PM2.5 
 
 ```{r}
 totallevels <- with(NEI, tapply(Emissions, as.factor(year), sum))
-par(mar = c(3,5,1,1))
+par(mar = c(3,5,3,1))
 plot(names(totallevels), totallevels, 
      type = "h", lwd = 100, lend = 1, xaxt = 'n', yaxt = 'n',
-     ylab = "PM.25 Levels in the U.S.\n(nationwide, in tons)", xlab = "", 
+     ylab = "Total measured PM.25 levels in tons\nU.S., Nationwide", xlab = "", 
      pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
-axis(side = 1, at = names(meanlevels))
+axis(side = 1, at = names(totallevels))
 axis(side = 2, at = c(4000000, 5000000, 6000000, 7000000), 
      labels = (c("4 mil.", "5 mil.", "6 mil.", "7 mil.")))
+title(main = "Total emissions from PM2.5 have decreased\nin the U.S. from 1999 to 2008")
 ```
-Yes, there has been a decrease in total emissions
 
 
-Have total emissions from PM2.5decreased in Baltimore City Maryland (fips 24510) from 1999 to 2008?
+Have total emissions from PM2.5 decreased in Baltimore City Maryland (fips 24510) from 1999 to 2008?
 
 ```{r}
 NEIbal <- NEI[NEI$fips == "24510",]
 Ballevels <- with(NEIbal, tapply(Emissions, as.factor(year), sum))
-par(mar = c(3,5,1,1))
+par(mar = c(3,5,3,1))
 plot(names(Ballevels), Ballevels, 
      type = "h", lwd = 100, lend = 1, xaxt = 'n',
-     ylab = "PM.25 Levels, in tons\nBaltimore City, Maryland", xlab = "", 
+     ylab = "Total measured PM.25 levels in tons\nBaltimore City, Maryland", xlab = "", 
      pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
-axis(side = 1, at = names(meanlevels))
+axis(side = 1, at = names(Ballevels))
+title(main = "Total emissions from PM2.5 have decreased\nin Baltimore comparing 1999 to 2008")
 ```
 
+Of the four types of sources inicated by the __type__ (point, nonpoint, onroad, nonroad) variable, which of these four sources have seen decreases in emissions from 1999 - 2008 for __Baltimore City__?  Which have seen increases?
 
+```{r, message=FALSE}
+NEIbal <- NEI[NEI$fips == "24510",]
 
+library(ggplot2)
 
+p1 <- ggplot(NEIbal, aes(year)) +
+  geom_bar(aes(weight = Emissions)) +
+  facet_wrap(~type)+
+  theme_bw() +
+  xlab("") +
+  ylab("Total measured PM2.5 levels, tons") +
+  scale_x_continuous(breaks = c(1999, 2002, 2005, 2008),
+                   labels = c("1999", "2002", "2005", "2008")) +
+  labs(title = "All sources in Baltimore show a decrease in PM2.5 emissions 
+       from 1999 - 2008, aside from the source \"POINT\"") +
+  theme(plot.title = element_text(hjust = 0.5))
+p1
+```
 
+Across the United States, how have emissions from the coal combustion-related sources changed from 1999 - 2008?
+```{r}
+coalSCC <- SCC[grepl("coal", SCC$EI.Sector, ignore.case = TRUE),]
+#subset just those observations that contain the word "coal" in the EI.Sector field
+coalSCC <- SCC[grepl("combustion", SCC$SCC.Level.Two, ignore.case = TRUE),]
+#from the above subset, subset just those observations that contain the word "combustion" in the SCC.Level.Two field
 
+coalNEI <- NEI[NEI$SCC %in% coalSCC$SCC,]
+#subset our main dataframe to just those observations that have a SCC that is also in the coalSSC dataframe we just created
+```
+
+```{r}
+totallevels <- with(coalNEI, tapply(Emissions, as.factor(year), sum))
+par(mar = c(3,5,5,1))
+plot(names(totallevels), totallevels, 
+     type = "h", lwd = 100, lend = 1, xaxt = 'n', yaxt = 'n',
+     ylab = "Total measured PM.25 levels in tons\nU.S., Nationwide", xlab = "", 
+     pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
+axis(side = 1, at = names(totallevels))
+axis(side = 2, at = c(200000, 600000, 1000000), 
+     labels = (c("200,000", "600,000", "1,000,000")))
+title(main = "Across the United States, emissions\nfrom coal combustion-related sources\nhave decreased comparing 1999 - 2008")
+```
+
+How have emissions from motor vehicles sources changed from 1999-2008 in Baltimore City?
+```{r}
+vehicleSCC <- SCC[grepl("vehicle", SCC$EI.Sector, ignore.case = TRUE),]
+#subset just those observations that contain the word "vehicle" in the EI.Sector field
+
+vehicleNEI <- NEI[NEI$SCC %in% vehicleSCC$SCC,]
+#subset our main dataframe to just those observations that have a SCC that is also in the vehicleSSC dataframe we just created
+
+vehicleNEIbal <- vehicleNEI[vehicleNEI$fips == "24510",]
+```
+
+```{r}
+Ballevels <- with(vehicleNEIbal, tapply(Emissions, as.factor(year), sum))
+par(mar = c(3,5,5,1))
+plot(names(Ballevels), Ballevels, 
+     type = "h", lwd = 100, lend = 1, xaxt = 'n',
+     ylab = "Total measured PM.25 levels in tons\nBaltimore City, Maryland", xlab = "", 
+     pch = 19, cex = 2, xlim = c(1998, 2009), col = "grey")
+axis(side = 1, at = names(Ballevels))
+title(main = "Emissions from motor vehicle sources have\ndecreased overall in Baltimore from 1999 to 2008")
+```
+
+Compare emissions from motor vehicle sources in Baltimore City with emissions from motor vehicles sources in Los Angeles County, California.  Which city has seen greater changes over time in motor vehicle emissions?
+```{r}
+vehicleSCC <- SCC[grepl("vehicle", SCC$EI.Sector, ignore.case = TRUE),]
+#subset just those observations that contain the word "vehicle" in the EI.Sector field
+
+vehicleNEI <- NEI[NEI$SCC %in% vehicleSCC$SCC,]
+#subset our main dataframe to just those observations that have a SCC that is also in the vehicleSSC dataframe we just created
+
+vehicleNEIbalLA <- vehicleNEI[vehicleNEI$fips == "24510" | vehicleNEI$fips == "06037",]
+vehicleNEIbalLA$fips[vehicleNEIbalLA$fips == "24510"] <- "Baltimore"
+vehicleNEIbalLA$fips[vehicleNEIbalLA$fips == "06037"] <- "Los Angeles"
+```
+
+```{r, message=FALSE}
+totallevels <- with(vehicleNEIbalLA, tapply(Emissions, list(year, fips), sum))
+totallevels
+
+library(reshape2)
+totallevels <- as.data.frame(totallevels)
+totallevels$year <- rownames(totallevels)
+totallevels
+
+totallevels <- melt(totallevels,
+                    id.vars = c(3),
+                    measure.vars = c(1,2)
+                    )
+names(totallevels) <- c("year", "City", "Emissions")
+totallevels$year <- as.numeric(totallevels$year)
+totallevels
+```
+
+```{r, message=FALSE}
+library(ggplot2)
+p2 <- ggplot(totallevels, aes(year)) +
+  geom_bar(aes(weight = Emissions)) +
+  facet_grid(~City) +
+  geom_text(aes(y=Emissions, label = round(Emissions)), vjust = -.11) +
+  theme_bw() +
+  xlab("") +
+  ylab("Total measured PM2.5 levels, tons
+  from motor vehicle sources") +
+  scale_x_continuous(breaks = c(1999, 2002, 2005, 2008),
+                   labels = c("1999", "2002", "2005", "2008")) +
+  labs(title = 
+ "Emissions from motor vehicle sources have seen greater 
+ changes in Baltimore than in Los Angeles, both in absolute 
+ and relative terms, when comparing 1999 to 2008 values") +
+  theme(plot.title = element_text(hjust = .5))
+p2
+```
